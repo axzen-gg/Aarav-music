@@ -1,0 +1,1371 @@
+--[[ 
+    Xdemic Profile Changer - Clean Version
+    Target: Brookhaven RP Name & Bio (Dynamic Display Name)
+    Dev: AXZEN
+]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local plr = Players.LocalPlayer
+
+--// LOCATE REMOTES
+local NameRemote, ColorRemote
+for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+    if v:IsA("RemoteEvent") then
+        if v.Name:find("Nam1eTex1t") then NameRemote = v end
+        if v.Name:find("Colo1r")     then ColorRemote = v end
+    end
+    if NameRemote and ColorRemote then break end
+end
+
+--// CONFIGURATION
+local cleanName = "🇻🇮ᴀᴀʀᴀᴠ ᴍᴜꜱɪᴄ🇻🇮"
+local cleanBio  = "weclome , " .. plr.DisplayName -- Automatically adds your display name
+local purpleColor3 = Color3.fromRGB(148, 0, 211)
+
+--// EXECUTE
+task.spawn(function()
+    -- Update Name
+    if NameRemote then
+        pcall(function()
+            NameRemote:FireServer("RolePlayName", cleanName)
+            -- Adding a short wait between updates is safer for mobile executors
+            task.wait(0.2)
+            NameRemote:FireServer("RolePlayBio", cleanBio)
+        end)
+    else
+        warn("Xdemic: NameRemote not found.")
+    end
+
+    -- Update Color
+    if ColorRemote then
+        pcall(function()
+            ColorRemote:FireServer("PickingRPNameColor", purpleColor3)
+        end)
+    else
+        warn("Xdemic: ColorRemote not found.")
+    end
+end)
+-- 🇻🇮ᴀᴀʀᴀᴠ ᴍᴜꜱɪᴄ🇻🇮 V3 — Futuristic Purple RGB Edition
+-- Loading Screen + Device Select + Movable Bubble + Full Music Suite
+
+local _3 = workspace.CurrentCamera.ViewportSize
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
+
+-- Auto Chat Message on Load
+task.spawn(function()
+    task.wait(0.5)
+    pcall(function()
+        local msg = "🇻🇮ᴀᴀʀᴀᴠ ᴍᴜꜱɪᴄ ꜱᴛᴀʀᴛᴇᴅ🇻🇮"
+        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+            local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+            if channel then channel:SendAsync(msg) end
+        else
+            local sayEvent = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+            if sayEvent and sayEvent:FindFirstChild("SayMessageRequest") then
+                sayEvent.SayMessageRequest:FireServer(msg, "All")
+            end
+        end
+    end)
+end)
+
+-- Cleanup old instance
+if CoreGui:FindFirstChild("AaravMusicV3") then CoreGui:FindFirstChild("AaravMusicV3"):Destroy() end
+if CoreGui:FindFirstChild("AaravMusicBoot") then CoreGui:FindFirstChild("AaravMusicBoot"):Destroy() end
+if CoreGui:FindFirstChild("AaravMusicToggle") then CoreGui:FindFirstChild("AaravMusicToggle"):Destroy() end
+
+-- ══════════════════════════════════════════
+--  DEVICE PROFILE
+-- ══════════════════════════════════════════
+local DeviceMode = "PC"
+local ScaleMul   = 1.5
+local LOADING_MUSIC_ID = "rbxassetid://1846690636"
+local BUBBLE_IMAGE_ID  = "rbxassetid://0"  -- replace with your image asset id
+
+local function _4(axis, val)
+    local bx, by = 1920, 1080
+    if axis == "X" then return val * (_3.X / bx) * ScaleMul
+    elseif axis == "Y" then return val * (_3.Y / by) * ScaleMul end
+end
+
+-- ══════════════════════════════════════════
+--  PURPLE RGB PALETTE
+-- ══════════════════════════════════════════
+local C = {
+    BG      = Color3.fromRGB(8,   4,  18),
+    PANEL   = Color3.fromRGB(14,  6,  28),
+    SURFACE = Color3.fromRGB(22, 10,  42),
+    INPUT   = Color3.fromRGB(18,  8,  36),
+    PURPLE  = Color3.fromRGB(120, 40, 220),
+    BLUE    = Color3.fromRGB(40,  80, 255),
+    WHITE   = Color3.fromRGB(230, 220, 255),
+    GRAY    = Color3.fromRGB(110, 90, 150),
+    GREEN   = Color3.fromRGB(50,  220, 120),
+    RED     = Color3.fromRGB(210, 50,  80),
+    GOLD    = Color3.fromRGB(200, 160, 255),
+}
+
+local function getRGB(off)
+    local t = (os.clock() * 0.3 + (off or 0)) % 1
+    return Color3.fromHSV(0.60 + 0.25 * math.abs(math.sin(t * math.pi)), 0.9, 1)
+end
+
+local RGB_S = {}
+RunService.RenderStepped:Connect(function()
+    local col = getRGB(0)
+    for i = #RGB_S, 1, -1 do
+        local s = RGB_S[i]
+        if s and s.Parent then s.Color = col else table.remove(RGB_S, i) end
+    end
+end)
+
+local function corner(f, r) local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, r or 10) c.Parent = f return c end
+local function stroke(f, col, th) local s = Instance.new("UIStroke") s.Color = col or C.PURPLE s.Thickness = th or 1.5 s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border s.Parent = f table.insert(RGB_S, s) return s end
+local function popIn(f) local sc = Instance.new("UIScale") sc.Scale = 0.5 sc.Parent = f TweenService:Create(sc, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Scale=1}):Play() end
+
+-- ══════════════════════════════════════════
+--  BOOT GUI
+-- ══════════════════════════════════════════
+local bootGui = Instance.new("ScreenGui")
+bootGui.Name = "AaravMusicBoot"
+bootGui.Parent = CoreGui
+bootGui.ResetOnSpawn = false
+bootGui.DisplayOrder = 998
+bootGui.IgnoreGuiInset = true
+
+-- ─── LOADING SCREEN ───
+local loadBg = Instance.new("Frame")
+loadBg.Size = UDim2.new(1,0,1,0)
+loadBg.BackgroundColor3 = C.BG
+loadBg.BorderSizePixel = 0
+loadBg.ClipsDescendants = true
+loadBg.Parent = bootGui
+
+local introMusic = Instance.new("Sound")
+introMusic.SoundId = LOADING_MUSIC_ID
+introMusic.Volume = 0.55
+introMusic.Looped = false
+introMusic.Parent = game:GetService("SoundService")
+pcall(function() introMusic:Play() end)
+
+-- Particles
+task.spawn(function()
+    while loadBg and loadBg.Parent and loadBg.Visible do
+        local p = Instance.new("Frame")
+        local sz = math.random(2,5)
+        p.Size = UDim2.new(0,sz,0,sz)
+        p.Position = UDim2.new(math.random(0,100)/100,0,1,0)
+        p.BackgroundColor3 = C.PURPLE
+        p.BackgroundTransparency = math.random(2,6)/10
+        p.BorderSizePixel = 0
+        p.ZIndex = 0
+        corner(p, sz)
+        p.Parent = loadBg
+        local dur = math.random(20,35)/10
+        local drift = (math.random(-15,15))/100
+        local tw = TweenService:Create(p, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+            Position = UDim2.new(p.Position.X.Scale+drift,0,-0.1,0),
+            BackgroundTransparency = 1
+        })
+        tw:Play()
+        tw.Completed:Connect(function() if p then p:Destroy() end end)
+        task.wait(0.12)
+    end
+end)
+
+-- Scanline
+local scanLine = Instance.new("Frame")
+scanLine.Size = UDim2.new(1,0,0,2)
+scanLine.BackgroundColor3 = C.PURPLE
+scanLine.BackgroundTransparency = 0.3
+scanLine.BorderSizePixel = 0
+scanLine.ZIndex = 1
+scanLine.Parent = loadBg
+task.spawn(function()
+    while loadBg and loadBg.Parent and loadBg.Visible do
+        scanLine.Position = UDim2.new(0,0,0,0)
+        local tw = TweenService:Create(scanLine, TweenInfo.new(2.2, Enum.EasingStyle.Linear), {Position=UDim2.new(0,0,1,0)})
+        tw:Play()
+        task.wait(2.2)
+    end
+end)
+
+-- Rings
+local ringHolder = Instance.new("Frame")
+ringHolder.Size = UDim2.new(0,200,0,200)
+ringHolder.AnchorPoint = Vector2.new(0.5,0.5)
+ringHolder.Position = UDim2.new(0.5,0,0.42,0)
+ringHolder.BackgroundTransparency = 1
+ringHolder.Parent = loadBg
+for i=1,3 do
+    local ring = Instance.new("Frame")
+    ring.Size = UDim2.new(0,60+i*30,0,60+i*30)
+    ring.AnchorPoint = Vector2.new(0.5,0.5)
+    ring.Position = UDim2.new(0.5,0,0.5,0)
+    ring.BackgroundTransparency = 1
+    ring.Parent = ringHolder
+    corner(ring, 999)
+    local rs = Instance.new("UIStroke") rs.Thickness=2 rs.Color=C.PURPLE rs.Parent=ring
+    table.insert(RGB_S, rs)
+    task.spawn(function()
+        while ring and ring.Parent do
+            TweenService:Create(ring, TweenInfo.new(1.6,Enum.EasingStyle.Sine), {Rotation=ring.Rotation+360}):Play()
+            task.wait(1.6)
+        end
+    end)
+end
+
+local logoLbl = Instance.new("TextLabel")
+logoLbl.Size = UDim2.new(0,120,0,40)
+logoLbl.AnchorPoint = Vector2.new(0.5,0.5)
+logoLbl.Position = UDim2.new(0.5,0,0.42,0)
+logoLbl.BackgroundTransparency = 1
+logoLbl.Text = "🇻🇮"
+logoLbl.TextScaled = true
+logoLbl.Font = Enum.Font.GothamBlack
+logoLbl.Parent = loadBg
+
+local titleLbl = Instance.new("TextLabel")
+titleLbl.Size = UDim2.new(1,0,0,40)
+titleLbl.Position = UDim2.new(0,0,0.58,0)
+titleLbl.BackgroundTransparency = 1
+titleLbl.Text = "🇻🇮ᴀᴀʀᴀᴠ ᴍᴜꜱɪᴄ🇻🇮"
+titleLbl.TextColor3 = C.WHITE
+titleLbl.Font = Enum.Font.GothamBlack
+titleLbl.TextSize = 30
+titleLbl.Parent = loadBg
+
+local subLbl = Instance.new("TextLabel")
+subLbl.Size = UDim2.new(1,0,0,24)
+subLbl.Position = UDim2.new(0,0,0.64,0)
+subLbl.BackgroundTransparency = 1
+subLbl.Text = "Initializing systems..."
+subLbl.TextColor3 = C.GRAY
+subLbl.Font = Enum.Font.Gotham
+subLbl.TextSize = 14
+subLbl.Parent = loadBg
+
+local barBack = Instance.new("Frame")
+barBack.Size = UDim2.new(0,320,0,6)
+barBack.AnchorPoint = Vector2.new(0.5,0)
+barBack.Position = UDim2.new(0.5,0,0.72,0)
+barBack.BackgroundColor3 = C.SURFACE
+barBack.Parent = loadBg
+corner(barBack,3)
+local barFill = Instance.new("Frame")
+barFill.Size = UDim2.new(0,0,1,0)
+barFill.BackgroundColor3 = C.PURPLE
+barFill.Parent = barBack
+corner(barFill,3)
+local pctLbl = Instance.new("TextLabel")
+pctLbl.Size = UDim2.new(0,60,0,18)
+pctLbl.AnchorPoint = Vector2.new(0.5,0)
+pctLbl.Position = UDim2.new(0.5,0,0.755,0)
+pctLbl.BackgroundTransparency = 1
+pctLbl.Text = "0%"
+pctLbl.TextColor3 = C.GOLD
+pctLbl.Font = Enum.Font.GothamBold
+pctLbl.TextSize = 12
+pctLbl.Parent = loadBg
+
+local loadSteps = {
+    "Initializing systems...", "Connecting to servers...",
+    "Loading music library...", "Preparing playlist engine...", "Finalizing interface..."
+}
+task.spawn(function()
+    local total = 5
+    for i=1,total do
+        subLbl.Text = loadSteps[i] or "Loading..."
+        local startPct = (i-1)/total
+        TweenService:Create(barFill, TweenInfo.new(1,Enum.EasingStyle.Quart,Enum.EasingDirection.Out), {Size=UDim2.new(i/total,0,1,0)}):Play()
+        local t0 = os.clock()
+        while os.clock()-t0 < 1 do
+            pctLbl.Text = math.clamp(math.floor((startPct+(os.clock()-t0)/total)*100),0,100).."%"
+            task.wait(0.05)
+        end
+    end
+    pctLbl.Text = "100%"
+end)
+task.wait(5)
+loadBg.Visible = false
+pcall(function() introMusic:Stop(); introMusic:Destroy() end)
+
+-- ─── DEVICE SELECT SCREEN ───
+local devBg = Instance.new("Frame")
+devBg.Size = UDim2.new(1,0,1,0)
+devBg.BackgroundColor3 = C.BG
+devBg.BorderSizePixel = 0
+devBg.Parent = bootGui
+
+local devCard = Instance.new("Frame")
+devCard.Size = UDim2.new(0,420,0,300)
+devCard.AnchorPoint = Vector2.new(0.5,0.5)
+devCard.Position = UDim2.new(0.5,0,0.5,0)
+devCard.BackgroundColor3 = C.PANEL
+devCard.BackgroundTransparency = 0.2
+devCard.Parent = devBg
+corner(devCard,16)
+stroke(devCard, C.PURPLE, 2)
+popIn(devCard)
+
+local devTop = Instance.new("Frame")
+devTop.Size = UDim2.new(1,0,0,3)
+devTop.BackgroundColor3 = C.PURPLE
+devTop.BorderSizePixel = 0
+devTop.Parent = devCard
+corner(devTop,2)
+task.spawn(function() while devTop and devTop.Parent do devTop.BackgroundColor3=getRGB(0.1) task.wait(0.03) end end)
+
+local devTitle = Instance.new("TextLabel")
+devTitle.Size = UDim2.new(1,0,0,40)
+devTitle.Position = UDim2.new(0,0,0,20)
+devTitle.BackgroundTransparency = 1
+devTitle.Text = "🇻🇮 SELECT YOUR DEVICE"
+devTitle.TextColor3 = C.WHITE
+devTitle.Font = Enum.Font.GothamBlack
+devTitle.TextSize = 22
+devTitle.Parent = devCard
+
+local devSub = Instance.new("TextLabel")
+devSub.Size = UDim2.new(1,0,0,20)
+devSub.Position = UDim2.new(0,0,0,58)
+devSub.BackgroundTransparency = 1
+devSub.Text = "We'll optimize the interface for you"
+devSub.TextColor3 = C.GRAY
+devSub.Font = Enum.Font.Gotham
+devSub.TextSize = 12
+devSub.Parent = devCard
+
+local function makeDeviceBtn(text, icon, yPos)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,-60,0,56)
+    btn.Position = UDim2.new(0,30,0,yPos)
+    btn.BackgroundColor3 = C.SURFACE
+    btn.BackgroundTransparency = 0.25
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.Parent = devCard
+    corner(btn,12)
+    stroke(btn, C.PURPLE, 1.2)
+    local ic = Instance.new("TextLabel") ic.Size=UDim2.new(0,40,1,0) ic.Position=UDim2.new(0,14,0,0) ic.BackgroundTransparency=1 ic.Text=icon ic.TextScaled=true ic.Font=Enum.Font.GothamBlack ic.Parent=btn
+    local lb = Instance.new("TextLabel") lb.Size=UDim2.new(1,-70,1,0) lb.Position=UDim2.new(0,60,0,0) lb.BackgroundTransparency=1 lb.Text=text lb.TextColor3=C.WHITE lb.Font=Enum.Font.GothamBold lb.TextSize=16 lb.TextXAlignment=Enum.TextXAlignment.Left lb.Parent=btn
+    btn.MouseEnter:Connect(function() TweenService:Create(btn,TweenInfo.new(0.15),{BackgroundTransparency=0.05}):Play() end)
+    btn.MouseLeave:Connect(function() TweenService:Create(btn,TweenInfo.new(0.15),{BackgroundTransparency=0.25}):Play() end)
+    return btn
+end
+
+local mobileBtn = makeDeviceBtn("Mobile",  "📱", 96)
+local tabletBtn = makeDeviceBtn("Tablet",  "💻",160)
+local pcBtn     = makeDeviceBtn("PC",      "🖥️",224)
+
+-- Slash FX
+local slashOverlay = Instance.new("Frame") slashOverlay.Size=UDim2.new(1,0,1,0) slashOverlay.BackgroundTransparency=1 slashOverlay.ZIndex=50 slashOverlay.Visible=false slashOverlay.Parent=devBg
+local slashLabel = Instance.new("TextLabel") slashLabel.Size=UDim2.new(1,0,0,60) slashLabel.AnchorPoint=Vector2.new(0.5,0.5) slashLabel.Position=UDim2.new(0.5,0,0.5,0) slashLabel.BackgroundTransparency=1 slashLabel.TextColor3=C.GOLD slashLabel.Font=Enum.Font.GothamBlack slashLabel.TextSize=30 slashLabel.TextTransparency=1 slashLabel.ZIndex=51 slashLabel.Parent=slashOverlay
+local function playSlashFX(deviceName)
+    slashOverlay.Visible=true
+    slashLabel.Text="//// "..deviceName:upper().." LOCKED IN ////"
+    slashLabel.TextTransparency=1
+    slashLabel.Position=UDim2.new(0.5,-40,0.5,0)
+    TweenService:Create(slashLabel,TweenInfo.new(0.18,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{TextTransparency=0,Position=UDim2.new(0.5,0,0.5,0)}):Play()
+    task.delay(0.4,function()
+        TweenService:Create(slashLabel,TweenInfo.new(0.3,Enum.EasingStyle.Quart,Enum.EasingDirection.In),{TextTransparency=1,Position=UDim2.new(0.5,40,0.5,0)}):Play()
+    end)
+end
+
+local deviceChosen = false
+local function selectDevice(mode, mul)
+    if deviceChosen then return end
+    deviceChosen = true
+    DeviceMode = mode
+    ScaleMul = mul
+    playSlashFX(mode)
+    TweenService:Create(devCard,TweenInfo.new(0.25),{BackgroundTransparency=1}):Play()
+    for _,d in pairs(devCard:GetDescendants()) do
+        if d:IsA("TextLabel") or d:IsA("TextButton") then
+            pcall(function() TweenService:Create(d,TweenInfo.new(0.25),{TextTransparency=1}):Play() end)
+        end
+        if d:IsA("Frame") then
+            pcall(function() TweenService:Create(d,TweenInfo.new(0.25),{BackgroundTransparency=1}):Play() end)
+        end
+    end
+    task.wait(0.65)
+    devBg.Visible = false
+    buildMainUI()
+end
+
+mobileBtn.MouseButton1Click:Connect(function() selectDevice("Mobile", 2.1) end)
+tabletBtn.MouseButton1Click:Connect(function() selectDevice("Tablet", 1.8) end)
+pcBtn.MouseButton1Click:Connect(function()     selectDevice("PC",     1.5) end)
+
+-- ══════════════════════════════════════════
+--  MAIN UI
+-- ══════════════════════════════════════════
+function buildMainUI()
+
+-- ── MUSIC BACKEND ──
+local RE = ReplicatedStorage:FindFirstChild("RE") or ReplicatedStorage:WaitForChild("RE", 5)
+local VehicleRemote = RE and RE:FindFirstChild("1NoMoto1rVehicle1s")
+local ClearRemote   = RE and RE:FindFirstChild("1Clea1rTool1s")
+local RGBEnabled    = false
+local SelectedVehicle = "SegwaySmall"
+
+local SavedPlaylist = {}
+local MaxSavedSongs = 30
+local SaveFileName  = "AaravMusicV3_Playlist.json"
+
+local function LoadSavedPlaylist()
+    pcall(function()
+        if readfile and isfile and isfile(SaveFileName) then
+            local d = HttpService:JSONDecode(readfile(SaveFileName))
+            if d and type(d)=="table" then SavedPlaylist=d end
+        end
+    end)
+end
+local function SavePlaylistToFile()
+    pcall(function()
+        if writefile then writefile(SaveFileName, HttpService:JSONEncode(SavedPlaylist)) end
+    end)
+end
+LoadSavedPlaylist()
+
+local function SetVehicleSpeed()
+    task.spawn(function()
+        pcall(function()
+            local RS=ReplicatedStorage; local G,S
+            if RS:FindFirstChild("Remotes") then G=RS.Remotes:FindFirstChild("GetNoMotorVehicleSpeed"); S=RS.Remotes:FindFirstChild("SetNoMotorVehicleSpeed")
+            elseif RS:FindFirstChild("RE") then G=RS.RE:FindFirstChild("GetNoMotorVehicleSpeed"); S=RS.RE:FindFirstChild("SetNoMotorVehicleSpeed") end
+            if G and S then G:InvokeServer(); S:InvokeServer(25) end
+        end)
+    end)
+end
+
+local function ForcePlayMusic(Remote, ID)
+    if not Remote or ID=="" then return end
+    Remote:FireServer("PickingScooterMusicText", ID, nil, true)
+    Remote:FireServer("PickingScooterMusicText", ID)
+    Remote:FireServer("PickingScooterMusicText", tonumber(ID), nil, true)
+end
+
+local function StartRGBLoop()
+    if RGBEnabled then return end; RGBEnabled=true
+    task.spawn(function()
+        local CarRemote = RE and RE:FindFirstChild("1Player1sCa1r")
+        while RGBEnabled and task.wait(0.1) do
+            local c = Color3.fromHSV(tick()%5/5,1,1)
+            if CarRemote then CarRemote:FireServer("NoMotorColor",c) end
+            pcall(function() Players.LocalPlayer.PlayerGui.MainGUIHandler.NoMotorVehicleControl.NoMotorColorPicks.SetColor:FireServer(c) end)
+        end
+    end)
+end
+
+local function SmartPlayMusic(id, vehicleType, useRGB)
+    if not VehicleRemote or not ClearRemote then return end
+    task.spawn(function()
+        RGBEnabled=false
+        VehicleRemote:FireServer("Delete NoMotorVehicle")
+        task.wait(0.1)
+        ClearRemote:FireServer("ClearAllTools")
+        task.wait(0.15)
+        SetVehicleSpeed()
+        VehicleRemote:FireServer(vehicleType)
+        task.wait(1.0)
+        if useRGB then StartRGBLoop() end
+        ForcePlayMusic(VehicleRemote, id)
+    end)
+end
+
+local function StopMusic()
+    RGBEnabled=false
+    if VehicleRemote then VehicleRemote:FireServer("Delete NoMotorVehicle") end
+    task.spawn(function()
+        task.wait(0.1)
+        if ClearRemote then ClearRemote:FireServer("ClearAllTools") end
+    end)
+end
+
+-- ── PROTECTION ENGINE ──
+local ProtectionStates = {AntiSit=false, Noclip=false, SuperNoclip=false, AntiFling=false, Freeze=false}
+local Cons = {}
+local function toggleProtection(feature, state)
+    ProtectionStates[feature]=state
+    local char=LocalPlayer.Character
+    local hum=char and char:FindFirstChildOfClass("Humanoid")
+    local root=char and char:FindFirstChild("HumanoidRootPart")
+    if Cons[feature] then Cons[feature]:Disconnect(); Cons[feature]=nil end
+    if feature=="AntiSit" and state then
+        if hum and hum.Sit then hum.Sit=false end
+        Cons.AntiSit=RunService.Stepped:Connect(function()
+            local c=LocalPlayer.Character; local h=c and c:FindFirstChildOfClass("Humanoid")
+            if h and h.Sit then h.Sit=false end
+        end)
+    elseif feature=="Noclip" and state then
+        Cons.Noclip=RunService.Stepped:Connect(function()
+            if LocalPlayer.Character then
+                for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") and v.CanCollide then
+                        if not string.find(v.Name:lower(),"leg") and not string.find(v.Name:lower(),"foot") then
+                            v.CanCollide=false
+                        end
+                    end
+                end
+            end
+        end)
+    elseif feature=="SuperNoclip" and state then
+        Cons.SuperNoclip=RunService.Stepped:Connect(function()
+            if LocalPlayer.Character then
+                for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide=false end
+                end
+            end
+        end)
+    elseif feature=="AntiFling" and state then
+        Cons.AntiFling=RunService.Stepped:Connect(function()
+            for _,p in pairs(Players:GetPlayers()) do
+                if p~=LocalPlayer and p.Character then
+                    for _,v in pairs(p.Character:GetDescendants()) do
+                        if v:IsA("BasePart") then v.CanCollide=false end
+                    end
+                end
+            end
+            local myRoot=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if myRoot and (myRoot.Velocity.Magnitude>250 or myRoot.RotVelocity.Magnitude>250) then
+                myRoot.Velocity=Vector3.new(0,0,0); myRoot.RotVelocity=Vector3.new(0,0,0)
+            end
+        end)
+    elseif feature=="Freeze" then
+        if root then root.Anchored=state end
+        if state then
+            Cons.Freeze=LocalPlayer.CharacterAdded:Connect(function(newChar)
+                local newRoot=newChar:WaitForChild("HumanoidRootPart",5)
+                if newRoot then newRoot.Anchored=true end
+            end)
+        end
+    end
+end
+
+-- ── PROPS ENGINE ──
+local activeMode="None"
+local engineLoopActive=false
+local currentVis="Orbital"
+local function getMyProps()
+    local props={}
+    local wsCom=Workspace:FindFirstChild("WorkspaceCom")
+    if wsCom then
+        for _,item in pairs(wsCom:GetDescendants()) do
+            if item:IsA("Model") and item.Name=="Prop"..LocalPlayer.Name and item:FindFirstChild("SetCurrentCFrame") then
+                table.insert(props,item)
+            end
+        end
+    end
+    return props
+end
+local function getTargetRoot(targetName)
+    if targetName=="Self" then
+        return LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    else
+        local p=Players:FindFirstChild(targetName)
+        if p and p.Character then return p.Character:FindFirstChild("HumanoidRootPart") end
+    end
+    return nil
+end
+local function stopPropEngine() activeMode="None"; engineLoopActive=false end
+local function startPropEngine(mode, targetName, visType)
+    stopPropEngine(); task.wait(0.1)
+    activeMode=mode; engineLoopActive=true
+    task.spawn(function()
+        while engineLoopActive do
+            local root=getTargetRoot(targetName)
+            local props=getMyProps()
+            if root and #props>0 then
+                local t=tick()
+                for i,prop in ipairs(props) do
+                    task.spawn(function()
+                        local base=root.CFrame
+                        local final=base
+                        local col=Color3.fromHSV((t*0.5+(i/#props))%1,1,1)
+                        if activeMode=="Nuke" then
+                            final=base*CFrame.new(math.random(-2,2),math.random(0,3),math.random(-2,2))*CFrame.Angles(math.random(),math.random(),math.random())
+                        elseif activeMode=="Visualizer" then
+                            if visType=="Orbital" then
+                                local angle=(t*3)+((i/#props)*math.pi*2)
+                                final=base*CFrame.new(math.cos(angle)*6,0,math.sin(angle)*6)
+                            elseif visType=="Tornado" then
+                                local angle=(t*5)+((i/#props)*math.pi*2)
+                                local h=(i/#props)*12; local r=2+(i/#props)*5
+                                final=base*CFrame.new(math.cos(angle)*r,h-4,math.sin(angle)*r)
+                            elseif visType=="Swarm" then
+                                local ox=math.noise(t,i,0)*8; local oy=math.noise(t,0,i)*6; local oz=math.noise(0,t,i)*8
+                                final=base*CFrame.new(ox,oy+2,oz)
+                            elseif visType=="Grid" then
+                                local sp=5; local cols=math.ceil(math.sqrt(#props))
+                                local row=math.floor((i-1)/cols); local col2=(i-1)%cols
+                                final=base*CFrame.new((col2-cols/2)*sp,0,(row-cols/2)*sp)
+                            end
+                        end
+                        pcall(function()
+                            prop.SetCurrentCFrame:InvokeServer(final)
+                            if prop:FindFirstChild("ChangePropColor") then prop.ChangePropColor:InvokeServer(col) end
+                        end)
+                    end)
+                end
+            end
+            task.wait(0.08)
+        end
+    end)
+end
+
+-- ══════════════════════════════════════════
+--  MAIN SCREEN GUI
+-- ══════════════════════════════════════════
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AaravMusicV3"
+ScreenGui.Parent = CoreGui
+ScreenGui.DisplayOrder = 999
+ScreenGui.Enabled = false
+
+local stacked = (DeviceMode ~= "PC")
+local winWS = DeviceMode=="Mobile" and 0.96 or DeviceMode=="Tablet" and 0.88 or 0.55
+local winHS = DeviceMode=="Mobile" and 0.82 or DeviceMode=="Tablet" and 0.84 or 0.80
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(winWS,0,winHS,0)
+Main.Position = UDim2.new((1-winWS)/2,0,(1-winHS)/2,0)
+Main.BackgroundColor3 = C.BG
+Main.BackgroundTransparency = 0.08
+Main.Active = true
+Main.Draggable = (DeviceMode=="PC")
+Main.Parent = ScreenGui
+corner(Main,14)
+stroke(Main, C.PURPLE, 2)
+
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1,0,0,3)
+topBar.BackgroundColor3 = C.PURPLE
+topBar.BorderSizePixel = 0
+topBar.Parent = Main
+corner(topBar,2)
+RunService.RenderStepped:Connect(function() if topBar and topBar.Parent then topBar.BackgroundColor3=getRGB(0.1) end end)
+
+-- Close button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0,28,0,28)
+CloseBtn.Position = UDim2.new(1,-34,0,8)
+CloseBtn.BackgroundColor3 = C.RED
+CloseBtn.BackgroundTransparency = 0.2
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = C.WHITE
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextScaled = true
+CloseBtn.ZIndex = 12
+CloseBtn.Parent = Main
+corner(CloseBtn,7)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui.Enabled=false end)
+
+-- Title
+local TitleLbl = Instance.new("TextLabel")
+TitleLbl.Size = UDim2.new(1,-80,0,36)
+TitleLbl.Position = UDim2.new(0,8,0,5)
+TitleLbl.BackgroundColor3 = C.PANEL
+TitleLbl.BackgroundTransparency = 0.45
+TitleLbl.Text = "🇻🇮ᴀᴀʀᴀᴠ ᴍᴜꜱɪᴄ🇻🇮"
+TitleLbl.TextColor3 = C.WHITE
+TitleLbl.Font = Enum.Font.GothamBlack
+TitleLbl.TextScaled = true
+TitleLbl.ZIndex = 5
+TitleLbl.Parent = Main
+corner(TitleLbl,10)
+stroke(TitleLbl, C.PURPLE, 1.5)
+local tp2 = Instance.new("UIPadding") tp2.PaddingLeft=UDim.new(0,8) tp2.PaddingRight=UDim.new(0,8) tp2.Parent=TitleLbl
+
+local devTag = Instance.new("TextLabel")
+devTag.Size = UDim2.new(0,60,0,14)
+devTag.Position = UDim2.new(0,10,0,44)
+devTag.BackgroundTransparency = 1
+devTag.Text = DeviceMode
+devTag.TextColor3 = C.GOLD
+devTag.Font = Enum.Font.GothamBold
+devTag.TextSize = 10
+devTag.Parent = Main
+
+-- ─── TAB SYSTEM ───
+local TAB_Y = 62
+
+-- Left Tab Buttons
+local TabButtons = Instance.new("Frame")
+TabButtons.Size = UDim2.new(0,90,1,-TAB_Y-4)
+TabButtons.Position = UDim2.new(0,4,0,TAB_Y)
+TabButtons.BackgroundTransparency = 1
+TabButtons.ZIndex = 2
+TabButtons.Parent = Main
+local TabLayout = Instance.new("UIListLayout")
+TabLayout.Padding = UDim.new(0,2)
+TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabLayout.Parent = TabButtons
+
+-- Content area
+local ContentArea = Instance.new("Frame")
+ContentArea.Size = UDim2.new(1,-100,1,-TAB_Y-4)
+ContentArea.Position = UDim2.new(0,97,0,TAB_Y)
+ContentArea.BackgroundColor3 = C.SURFACE
+ContentArea.BackgroundTransparency = 0.3
+ContentArea.ZIndex = 2
+ContentArea.Parent = Main
+corner(ContentArea,8)
+stroke(ContentArea, C.PURPLE, 1)
+
+local activeContent = nil
+local function createTab(name, isFirst)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1,0,0,22)
+    Btn.BackgroundColor3 = isFirst and C.PURPLE or C.SURFACE
+    Btn.BackgroundTransparency = isFirst and 0.1 or 0.4
+    Btn.Text = name
+    Btn.TextColor3 = isFirst and C.WHITE or C.GRAY
+    Btn.Font = Enum.Font.GothamSemibold
+    Btn.TextSize = 9
+    Btn.ZIndex = 3
+    Btn.Parent = TabButtons
+    corner(Btn,5)
+    if isFirst then stroke(Btn, C.PURPLE, 1) end
+
+    local Page = Instance.new("Frame")
+    Page.Size = UDim2.new(1,-16,1,-10)
+    Page.Position = UDim2.new(0,8,0,5)
+    Page.BackgroundTransparency = 1
+    Page.Visible = isFirst
+    Page.ZIndex = 3
+    Page.Parent = ContentArea
+
+    if isFirst then activeContent=Page end
+
+    Btn.MouseButton1Click:Connect(function()
+        if activeContent==Page then return end
+        for _,child in pairs(TabButtons:GetChildren()) do
+            if child:IsA("TextButton") then
+                TweenService:Create(child,TweenInfo.new(0.2),{BackgroundColor3=C.SURFACE, BackgroundTransparency=0.4, TextColor3=C.GRAY}):Play()
+                -- remove old strokes
+                for _,s in pairs(child:GetChildren()) do if s:IsA("UIStroke") then s:Destroy() end end
+            end
+        end
+        for _,child in pairs(ContentArea:GetChildren()) do
+            if child:IsA("Frame") then child.Visible=false end
+        end
+        TweenService:Create(Btn,TweenInfo.new(0.2),{BackgroundColor3=C.PURPLE, BackgroundTransparency=0.1, TextColor3=C.WHITE}):Play()
+        stroke(Btn, C.PURPLE, 1)
+        Page.Visible=true
+        activeContent=Page
+    end)
+    return Page
+end
+
+local VehiclePage    = createTab("Vehicle",    true)
+local HitsPage       = createTab("HITS",       false)
+local HindiPage      = createTab("HINDI",      false)
+local RapsPage       = createTab("RAPS",       false)
+local BhojpuriPage   = createTab("BHOJPURI",   false)
+local PhonkPage      = createTab("PHONK",      false)
+local MultiPage      = createTab("MULTI",      false)
+local SoundsPage     = createTab("SOUNDS",     false)
+local SavedPage      = createTab("SAVED",      false)
+local ShufflePage    = createTab("Shuffle",    false)
+local PropsPage      = createTab("Props",      false)
+local ProtectionPage = createTab("Protect",    false)
+
+-- ─── HELPERS ───
+local function mkBtn(parent, text, bgCol, yPos, ht, wScale, xPos)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(wScale or 1,-4,0,ht or 24)
+    b.Position = UDim2.new(xPos or 0,2,0,yPos or 0)
+    b.BackgroundColor3 = bgCol or C.PURPLE
+    b.BackgroundTransparency = 0.15
+    b.Text = text
+    b.TextColor3 = C.WHITE
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 10
+    b.ZIndex = 4
+    b.Parent = parent
+    corner(b,6)
+    return b
+end
+
+local function mkLabel(parent, text, yPos, col, sz)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1,-4,0,18)
+    l.Position = UDim2.new(0,2,0,yPos or 0)
+    l.BackgroundTransparency = 1
+    l.Text = text
+    l.TextColor3 = col or C.GOLD
+    l.Font = Enum.Font.GothamBold
+    l.TextSize = sz or 11
+    l.ZIndex = 4
+    l.Parent = parent
+    return l
+end
+
+local function mkScroll(parent, yOff)
+    local sf = Instance.new("ScrollingFrame")
+    sf.Size = UDim2.new(1,0,1,-yOff)
+    sf.Position = UDim2.new(0,0,0,yOff)
+    sf.BackgroundTransparency = 1
+    sf.BorderSizePixel = 0
+    sf.ScrollBarThickness = 4
+    sf.ScrollBarImageColor3 = C.PURPLE
+    sf.ZIndex = 4
+    sf.Parent = parent
+    local ul = Instance.new("UIListLayout",sf)
+    ul.Padding = UDim.new(0,4)
+    return sf, ul
+end
+
+-- ─── VEHICLE TAB ───
+local function buildVehicleUI(p)
+    local IDBox = Instance.new("TextBox")
+    IDBox.Size = UDim2.new(1,-4,0,26)
+    IDBox.Position = UDim2.new(0,2,0,4)
+    IDBox.BackgroundColor3 = C.INPUT
+    IDBox.BackgroundTransparency = 0.2
+    IDBox.PlaceholderText = "Enter Audio ID..."
+    IDBox.Text = ""
+    IDBox.TextColor3 = C.WHITE
+    IDBox.Font = Enum.Font.Gotham
+    IDBox.TextSize = 11
+    IDBox.ClearTextOnFocus = true
+    IDBox.ZIndex = 4
+    IDBox.Parent = p
+    corner(IDBox,5)
+    stroke(IDBox, C.PURPLE, 1)
+
+    mkLabel(p,"Select Vehicle:",36,C.GRAY,10)
+
+    local SkateBtn = mkBtn(p,"Skateboard",C.SURFACE,54,22,0.48)
+    local HoverBtn = mkBtn(p,"Hoverboard",C.PURPLE, 54,22,0.48,0.52)
+
+    local function refreshVehicleBtns()
+        SkateBtn.BackgroundColor3 = SelectedVehicle=="SkateBoard" and C.GREEN or C.SURFACE
+        HoverBtn.BackgroundColor3 = SelectedVehicle=="SegwaySmall" and C.GREEN or C.PURPLE
+    end
+    SkateBtn.MouseButton1Click:Connect(function() SelectedVehicle="SkateBoard"; refreshVehicleBtns() end)
+    HoverBtn.MouseButton1Click:Connect(function() SelectedVehicle="SegwaySmall"; refreshVehicleBtns() end)
+    refreshVehicleBtns()
+
+    local sf, _ = mkScroll(p, 82)
+    local function addBtn(text, col, useRGB)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(1,-4,0,26); b.BackgroundColor3=col; b.BackgroundTransparency=0.15
+        b.Text=text; b.TextColor3=C.WHITE; b.Font=Enum.Font.GothamBold; b.TextSize=10; b.ZIndex=4; b.Parent=sf
+        corner(b,6)
+        b.MouseButton1Click:Connect(function() SmartPlayMusic(IDBox.Text, SelectedVehicle, useRGB) end)
+    end
+    addBtn("▶  Play Music",     C.BLUE,  false)
+    addBtn("🌈 Play with RGB",  C.PURPLE, true)
+    local stopB = Instance.new("TextButton")
+    stopB.Size=UDim2.new(1,-4,0,26); stopB.BackgroundColor3=C.RED; stopB.BackgroundTransparency=0.15
+    stopB.Text="⏹  Stop Music"; stopB.TextColor3=C.WHITE; stopB.Font=Enum.Font.GothamBold; stopB.TextSize=10; stopB.ZIndex=4; stopB.Parent=sf
+    corner(stopB,6)
+    stopB.MouseButton1Click:Connect(StopMusic)
+    sf.CanvasSize = UDim2.new(0,0,0,100)
+end
+
+-- ─── MUSIC TAB BUILDER ───
+local buildSavedUI  -- forward decl
+
+local function buildMusicTab(p, songList)
+    local SearchBox = Instance.new("TextBox")
+    SearchBox.Size=UDim2.new(1,-4,0,26); SearchBox.Position=UDim2.new(0,2,0,2)
+    SearchBox.BackgroundColor3=C.INPUT; SearchBox.BackgroundTransparency=0.2
+    SearchBox.PlaceholderText="🔍 Search..."; SearchBox.Text=""
+    SearchBox.TextColor3=C.WHITE; SearchBox.Font=Enum.Font.Gotham; SearchBox.TextSize=11
+    SearchBox.ClearTextOnFocus=false; SearchBox.ZIndex=4; SearchBox.Parent=p
+    corner(SearchBox,5); stroke(SearchBox, C.PURPLE,1)
+
+    local sf, _ = mkScroll(p, 34)
+    local uiItems = {}
+
+    local function CreateSongEntry(name, id)
+        local Entry = Instance.new("Frame")
+        Entry.Size=UDim2.new(1,-4,0,28); Entry.BackgroundColor3=C.SURFACE
+        Entry.BackgroundTransparency=0.3; Entry.ZIndex=4; Entry.Parent=sf
+        corner(Entry,5)
+        table.insert(uiItems,{frame=Entry, name=string.lower(name)})
+
+        local NL = Instance.new("TextLabel")
+        NL.Size=UDim2.new(0.44,0,1,0); NL.Position=UDim2.new(0,5,0,0)
+        NL.BackgroundTransparency=1; NL.Text=name; NL.TextColor3=C.WHITE
+        NL.Font=Enum.Font.Gotham; NL.TextSize=9; NL.TextXAlignment=Enum.TextXAlignment.Left
+        NL.TextTruncate=Enum.TextTruncate.AtEnd; NL.ZIndex=5; NL.Parent=Entry
+
+        local IL = Instance.new("TextLabel")
+        IL.Size=UDim2.new(0.24,0,1,0); IL.Position=UDim2.new(0.44,0,0,0)
+        IL.BackgroundTransparency=1; IL.Text="ID:"..tostring(id); IL.TextColor3=C.GOLD
+        IL.Font=Enum.Font.Gotham; IL.TextSize=8; IL.TextXAlignment=Enum.TextXAlignment.Left
+        IL.ZIndex=5; IL.Parent=Entry
+
+        local PlayBtn = Instance.new("TextButton")
+        PlayBtn.Size=UDim2.new(0,22,0,18); PlayBtn.Position=UDim2.new(1,-50,0.5,-9)
+        PlayBtn.BackgroundColor3=C.GREEN; PlayBtn.BackgroundTransparency=0.15
+        PlayBtn.Text="▶"; PlayBtn.TextColor3=C.WHITE; PlayBtn.Font=Enum.Font.GothamBold
+        PlayBtn.TextSize=10; PlayBtn.ZIndex=5; PlayBtn.Parent=Entry
+        corner(PlayBtn,4)
+
+        local SaveBtn = Instance.new("TextButton")
+        SaveBtn.Size=UDim2.new(0,22,0,18); SaveBtn.Position=UDim2.new(1,-26,0.5,-9)
+        SaveBtn.BackgroundColor3=C.PURPLE; SaveBtn.BackgroundTransparency=0.15
+        SaveBtn.Text="💾"; SaveBtn.TextColor3=C.WHITE; SaveBtn.Font=Enum.Font.GothamBold
+        SaveBtn.TextSize=10; SaveBtn.ZIndex=5; SaveBtn.Parent=Entry
+        corner(SaveBtn,4)
+
+        PlayBtn.MouseButton1Click:Connect(function()
+            local char=LocalPlayer.Character; local onVeh=false
+            if char then for _,v in pairs(char:GetChildren()) do
+                if v.Name=="SegwaySmall" or v.Name=="SkateBoard" then onVeh=true; break end
+            end end
+            if onVeh then if VehicleRemote then StartRGBLoop(); ForcePlayMusic(VehicleRemote,tostring(id)) end
+            else SmartPlayMusic(tostring(id),SelectedVehicle,false) end
+        end)
+        SaveBtn.MouseButton1Click:Connect(function()
+            if #SavedPlaylist<MaxSavedSongs then
+                table.insert(SavedPlaylist,{name=name,id=tostring(id)})
+                SavePlaylistToFile(); buildSavedUI(SavedPage)
+            end
+        end)
+    end
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local q=string.lower(SearchBox.Text); local vis=0
+        for _,item in ipairs(uiItems) do
+            local show = q=="" or string.find(item.name,q,1,true)
+            item.frame.Visible=show
+            if show then vis=vis+1 end
+        end
+        sf.CanvasSize=UDim2.new(0,0,0,vis*32)
+    end)
+
+    for _,song in ipairs(songList) do CreateSongEntry(song[1],song[2]) end
+    sf.CanvasSize=UDim2.new(0,0,0,#songList*32)
+end
+
+-- ─── SAVED UI ───
+function buildSavedUI(p)
+    for _,c in pairs(p:GetChildren()) do
+        if c:IsA("Frame") or c:IsA("TextButton") or c:IsA("TextBox") or c:IsA("ScrollingFrame") or c:IsA("TextLabel") then c:Destroy() end
+    end
+    mkLabel(p,"📁 Saved Songs ("..#SavedPlaylist.."/"..MaxSavedSongs..")",2,C.GOLD,11)
+    local clearBtn = mkBtn(p,"🗑  Clear All",C.RED,24,22)
+    clearBtn.MouseButton1Click:Connect(function()
+        SavedPlaylist={}; SavePlaylistToFile(); buildSavedUI(p)
+    end)
+    local sf,_ = mkScroll(p,52)
+    if #SavedPlaylist==0 then
+        local el=Instance.new("TextLabel"); el.Size=UDim2.new(1,0,0,40)
+        el.BackgroundTransparency=1; el.Text="No saved songs yet!\nClick 💾 on any song to save."
+        el.TextColor3=C.GRAY; el.Font=Enum.Font.Gotham; el.TextSize=10
+        el.TextWrapped=true; el.ZIndex=4; el.Parent=sf
+        sf.CanvasSize=UDim2.new(0,0,0,50); return
+    end
+    for i,song in ipairs(SavedPlaylist) do
+        local Entry=Instance.new("Frame"); Entry.Size=UDim2.new(1,-4,0,28)
+        Entry.BackgroundColor3=C.SURFACE; Entry.BackgroundTransparency=0.3; Entry.ZIndex=4; Entry.Parent=sf
+        corner(Entry,5)
+        local NL=Instance.new("TextLabel"); NL.Size=UDim2.new(0.44,0,1,0); NL.Position=UDim2.new(0,5,0,0)
+        NL.BackgroundTransparency=1; NL.Text=song.name; NL.TextColor3=C.WHITE
+        NL.Font=Enum.Font.Gotham; NL.TextSize=9; NL.TextXAlignment=Enum.TextXAlignment.Left
+        NL.TextTruncate=Enum.TextTruncate.AtEnd; NL.ZIndex=5; NL.Parent=Entry
+        local IL=Instance.new("TextLabel"); IL.Size=UDim2.new(0.24,0,1,0); IL.Position=UDim2.new(0.44,0,0,0)
+        IL.BackgroundTransparency=1; IL.Text="ID:"..song.id; IL.TextColor3=C.GOLD
+        IL.Font=Enum.Font.Gotham; IL.TextSize=8; IL.TextXAlignment=Enum.TextXAlignment.Left
+        IL.ZIndex=5; IL.Parent=Entry
+        local PB=Instance.new("TextButton"); PB.Size=UDim2.new(0,22,0,18); PB.Position=UDim2.new(1,-50,0.5,-9)
+        PB.BackgroundColor3=C.GREEN; PB.BackgroundTransparency=0.15; PB.Text="▶"
+        PB.TextColor3=C.WHITE; PB.Font=Enum.Font.GothamBold; PB.TextSize=10; PB.ZIndex=5; PB.Parent=Entry
+        corner(PB,4)
+        local RB=Instance.new("TextButton"); RB.Size=UDim2.new(0,22,0,18); RB.Position=UDim2.new(1,-26,0.5,-9)
+        RB.BackgroundColor3=C.RED; RB.BackgroundTransparency=0.15; RB.Text="✕"
+        RB.TextColor3=C.WHITE; RB.Font=Enum.Font.GothamBold; RB.TextSize=10; RB.ZIndex=5; RB.Parent=Entry
+        corner(RB,4)
+        PB.MouseButton1Click:Connect(function()
+            local char=LocalPlayer.Character; local onVeh=false
+            if char then for _,v in pairs(char:GetChildren()) do
+                if v.Name=="SegwaySmall" or v.Name=="SkateBoard" then onVeh=true; break end
+            end end
+            if onVeh then if VehicleRemote then StartRGBLoop(); ForcePlayMusic(VehicleRemote,song.id) end
+            else SmartPlayMusic(song.id,SelectedVehicle,false) end
+        end)
+        RB.MouseButton1Click:Connect(function()
+            table.remove(SavedPlaylist,i); SavePlaylistToFile(); buildSavedUI(p)
+        end)
+    end
+    sf.CanvasSize=UDim2.new(0,0,0,#SavedPlaylist*32)
+end
+
+-- ─── SONG LISTS ───
+local HitsSongs = {
+    {"Epstein Music",139601415006173},{"Macarena",1846690636},
+    {"Soft Skies & You",140736931153864},{"Blue Young Kai",84729628311938},{"Summertime Sadness",107887768910692},
+    {"Love Story",135528953872601},{"Mommyy",112429422439068},{"I Got You Baby",115492336583856},
+    {"Alone",105512964264815},{"Another World",111351357978027},{"Isekai",131874270028720},
+    {"StarsMoon",112355709978731},{"Meow Meow",99034537604129},{"Under the influence",103222441664136},
+    {"Sadness",128159342762162},{"Sweater Weather",75254239320157},{"Doraemon",121640028060880},
+    {"Baby Shark",126462032038855},{"So Clean",93958751571254},{"NoCopyrightSound",72031945149756},
+    {"LegendNeverDies",112738519477450},{"Thought",87373439541502},{"Confess You Love",87559737835956},
+    {"SetMcMn",78631447496051},{"Blinding Lights",1842805773},{"Levitating",6606223788},
+    {"As It Was",8915577374},{"Anti-Hero",11098454532},{"Flowers",12211382345},
+    {"Paint The Town Red",14372520607},{"Vampire",14019995782},{"Kill Bill",12046416989},
+    {"CUFF IT",10131382078},{"Espresso",16789123456},
+}
+local HindiSongs = {
+    {"HE RANGLO",128232876294868},{"Akhiyan",104380086210152},{"Aalu Kachlu Beta",138396893861830},
+    {"Bada Pachtaoge",79561785821029},{"Saiyara",110710316953203},{"Unke Andaz Karam",95589943778476},
+    {"Hai Dill Yein Mera",113792808283128},{"Dhun Female",129981117529204},{"Manja",83325283987770},
+    {"Aaj Mangalwar Hai",98606901625415},{"Majisa",91368973732735},{"Pal Pal",77002121761232},
+    {"Nacho Saare",108968616078928},{"Tumse Mil Kar",133053501453467},{"Pyar Ka Ehsas",105568083374120},
+    {"Ladki Badi Anjani Hai",128892246666972},{"Dil Ne Ye Kaha",113554906905279},{"Gulabi Gulabi",102924925389960},
+    {"Addat",94103203628909},{"Naddiyaaa",128688756073670},{"Kabhi Kabhi",101068303675725},
+    {"Jhol",121180010622504},{"Maula Mere",105017950345985},{"Mann Mera",140298499491642},
+    {"Deewana",88345320570909},{"Naini Se Baan",108734798852042},{"Saawre",111219978139804},
+    {"Kesariya",10059668834},{"Apna Bana Le",11005590115},{"Raataan Lambiyan",7384523412},
+    {"Ranjha",9102384756},{"Shayad",6521458932},{"Tujhe Kitna Chahne Lage",5432678901},
+}
+local RapsSongs = {
+    {"God's Plan",1665926924},{"Stronger",136209425},{"Gangsta's Paradise",6070263388},
+    {"Industry Baby",7253841629},{"Black and Yellow",139235100},{"A Roblox Rap",1259050178},
+    {"RAPSTAR",6678031214},{"This Is America",2062482384},
+    {"Drop It Like It's Hot",292861322},{"Without Me",6689996382},
+    {"Lose Yourself",142297926},{"Rap God",163169183},{"Not Afraid",289230995},
+    {"In My Feelings",2153662828},{"One Dance",1102847415},{"HUMBLE.",6568276171},
+    {"SICKO MODE",2153662828},{"Circles",3951656337},{"In Da Club",142305215},
+    {"WAP",6568276789},{"Lucid Dreams",289232456},{"SAD!",289232789},
+    {"Dior",6568279012},{"Drip Too Hard",289233012},
+}
+local BhojpuriSongs = {
+    {"Lamba Lamba Ghughat",78431826650714},{"Balam Ke Pichkari",89700384406008},{"Moh Lelo",95909411418420},
+    {"Sunny Dancer",133421259018974},{"TakTaki Bhojpuri",78735782383680},{"Ladki Deewani",102511873453786},
+    {"Bansuri",79568658897083},{"Sejiya Pe Piya",87577798625777},
+    {"Sadi Ladki",104574653065736},{"Dar Lage",128470232274219},{"Hamra Mard",131679833636653},
+    {"Video Calling",126309103230345},{"Lollypop Lagelu",1834567890},{"Chhalakata",2945678901},
+    {"Dulha",3056789012},{"Hello Koun",4167890123},{"Kamar Dab",5278901234},
+    {"Patna Se",6389012345},{"Sarkar",7490123456},
+}
+local PhonkSongs = {
+    {"TribalDrums",119454163125856},{"Senor Phonk",113425320169497},
+    {"Jet 2 Holiday",135701361688935},{"VERTIGO FUNK",100243051031264},{"haha (NGI)",122114766584918},
+    {"MAMMA MIA FUNK",134153043498082},{"MONTAGEM DRESCE",134687778902887},{"spooky scary lol",100828050594137},
+    {"DARE",139188421510869},{"Montagem Vida",79889952866985},{"Montagem Balada",83797836818857},
+    {"BRAZILIAN PHONK NEW",85635811474451},{"Gangstas Paradise",6070263388},{"FISSION",118349786848415},
+    {"Escalate",85306184126616},{"METAMORPHOSIS",12345678901},{"MIDNIGHT PHONK",13456789012},
+    {"NEON BLADE",14567890123},{"RAVE PHONK",15678901234},{"GOTH FUNK",140704128008979},
+    {"CRYSTAL FUNK!",103445348511856},{"HEAVENLY JUMPSTYLE",102332883378771},
+}
+local MultiSongs = {
+    {"Chhogada",132817140436217},{"He Ranglo",128232876294868},{"Maa Durga",82446868166514},
+    {"Jaago Maa Durga",89047007812046},{"Shree Durga",135346318153434},{"Jay Matadi",101446595061046},
+    {"Tunak Tunak",117542440446894},{"Swaad",125800612683016},{"Balle Balle",101682048332257},
+    {"Born To Shine",1122334455},{"Excuses",2233445566},{"On Top",3344556677},
+    {"295",4455667788},{"No Love",5566778899},{"Lahore",6677889900},
+    {"Genda Phool",7788990011},{"Dhaakad",8899001122},{"Kohinoor",9900112233},
+}
+local SoundsSongs = {
+    {"UwU",105577043687038},{"Senpai",115498703521334},{"Kiss",118235447189969},
+    {"Anime Ahh",119651952208423},{"Ah",121259252258118},{"18+ Girl",131014261385625},
+    {"Girl Evil Laugh",134548905274433},{"Tom",139694892021582},{"Slayy",139740597178232},
+    {"Vine Boom",2614753599},{"Bruh Sound",4567890123},{"Fart Sound",5678901234},
+    {"Screaming",6789012345},{"Anime Wow",7890123456},{"Sad Violin",8901234567},
+    {"Taco Bell",9012345678},{"Roblox Death",1223456789},{"Mario Jump",2334567890},
+    {"Among Us Emergency",3445678901},{"Jumpscare",6201427049},{"Desi Gun",3177712713},
+    {"Laughing",4767799547},{"CID",105096889615032},
+}
+
+local AllSongs = {}
+for _,s in ipairs(HitsSongs)     do table.insert(AllSongs,s) end
+for _,s in ipairs(HindiSongs)    do table.insert(AllSongs,s) end
+for _,s in ipairs(RapsSongs)     do table.insert(AllSongs,s) end
+for _,s in ipairs(BhojpuriSongs) do table.insert(AllSongs,s) end
+for _,s in ipairs(PhonkSongs)    do table.insert(AllSongs,s) end
+for _,s in ipairs(MultiSongs)    do table.insert(AllSongs,s) end
+
+-- ─── SHUFFLE UI ───
+local currentShuffleSong = nil
+local function buildShuffleUI(p)
+    mkLabel(p,"🎲 Random Shuffle Mix",4,C.GOLD,13)
+    local shuffleBtn = mkBtn(p,"🔀  Play Random Mix",C.PURPLE,28,32)
+    local nowLbl = Instance.new("TextLabel")
+    nowLbl.Size=UDim2.new(1,-4,0,50); nowLbl.Position=UDim2.new(0,2,0,68)
+    nowLbl.BackgroundTransparency=1; nowLbl.Text="Click Shuffle to start!"
+    nowLbl.TextColor3=C.GRAY; nowLbl.Font=Enum.Font.Gotham; nowLbl.TextSize=10
+    nowLbl.TextWrapped=true; nowLbl.ZIndex=4; nowLbl.Parent=p
+
+    local function PlayRandom()
+        if #AllSongs==0 then return end
+        local s=AllSongs[math.random(1,#AllSongs)]
+        currentShuffleSong=s
+        nowLbl.Text="🎵 Now Playing:\n"..s[1].."\nID: "..s[2]
+        local char=LocalPlayer.Character; local onVeh=false
+        if char then for _,v in pairs(char:GetChildren()) do
+            if v.Name=="SegwaySmall" or v.Name=="SkateBoard" then onVeh=true; break end
+        end end
+        if onVeh then if VehicleRemote then StartRGBLoop(); ForcePlayMusic(VehicleRemote,tostring(s[2])) end
+        else SmartPlayMusic(tostring(s[2]),SelectedVehicle,false) end
+    end
+    shuffleBtn.MouseButton1Click:Connect(PlayRandom)
+
+    local nextBtn = mkBtn(p,"⏭  Next Song",C.BLUE,128,28)
+    nextBtn.MouseButton1Click:Connect(PlayRandom)
+
+    local saveBtn = mkBtn(p,"💾  Save Current",C.GOLD,164,28)
+    saveBtn.MouseButton1Click:Connect(function()
+        if currentShuffleSong and #SavedPlaylist<MaxSavedSongs then
+            table.insert(SavedPlaylist,{name=currentShuffleSong[1],id=tostring(currentShuffleSong[2])})
+            SavePlaylistToFile(); buildSavedUI(SavedPage)
+        end
+    end)
+end
+
+-- ─── PROPS UI ───
+local function buildPropsUI(p)
+    local warnLbl=Instance.new("TextLabel"); warnLbl.Size=UDim2.new(1,-4,0,24); warnLbl.Position=UDim2.new(0,2,0,2)
+    warnLbl.BackgroundTransparency=1; warnLbl.Text="⚠️ Place props manually first! ⚠️"
+    warnLbl.TextColor3=C.RED; warnLbl.Font=Enum.Font.GothamBold; warnLbl.TextSize=9; warnLbl.TextWrapped=true; warnLbl.ZIndex=4; warnLbl.Parent=p
+
+    local currentTarget="Self"
+    local TargetBtn=mkBtn(p,"Target: Self ▼",C.SURFACE,30,22)
+    TargetBtn.TextColor3=C.GOLD
+
+    local TargetScroll=Instance.new("ScrollingFrame"); TargetScroll.Size=UDim2.new(1,0,0,70)
+    TargetScroll.Position=UDim2.new(0,0,0,54); TargetScroll.BackgroundColor3=C.BG
+    TargetScroll.BorderSizePixel=0; TargetScroll.ZIndex=15; TargetScroll.Visible=false
+    TargetScroll.ScrollBarThickness=3; TargetScroll.Parent=p
+    local TL=Instance.new("UIListLayout",TargetScroll); TL.SortOrder=Enum.SortOrder.Name
+
+    local VisScroll=Instance.new("ScrollingFrame")
+
+    local function refreshPlayers()
+        for _,c in pairs(TargetScroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+        local function addOpt(name)
+            local ob=Instance.new("TextButton"); ob.Size=UDim2.new(1,0,0,18)
+            ob.BackgroundColor3=C.SURFACE; ob.BackgroundTransparency=0.3; ob.Text=" "..name
+            ob.TextColor3=C.WHITE; ob.Font=Enum.Font.Gotham; ob.TextSize=10
+            ob.TextXAlignment=Enum.TextXAlignment.Left; ob.ZIndex=16; ob.Parent=TargetScroll
+            ob.MouseButton1Click:Connect(function()
+                currentTarget=name; TargetBtn.Text="Target: "..name.." ▼"
+                TargetScroll.Visible=false
+                if activeMode~="None" then startPropEngine(activeMode,currentTarget,currentVis) end
+            end)
+        end
+        addOpt("Self")
+        for _,pl in pairs(Players:GetPlayers()) do if pl~=LocalPlayer then addOpt(pl.Name) end end
+        TargetScroll.CanvasSize=UDim2.new(0,0,0,TL.AbsoluteContentSize.Y)
+    end
+    refreshPlayers()
+    Players.PlayerAdded:Connect(refreshPlayers)
+    Players.PlayerRemoving:Connect(refreshPlayers)
+    TargetBtn.MouseButton1Click:Connect(function()
+        TargetScroll.Visible=not TargetScroll.Visible; VisScroll.Visible=false
+    end)
+
+    local NukeBtn=mkBtn(p,"💥 NUKE PROPS",C.RED,58,22)
+    local VisBtn=mkBtn(p,"Visualizer: Orbital ▼",C.SURFACE,86,22,0.64)
+    VisBtn.TextColor3=C.GOLD
+    local VisToggle=mkBtn(p,"START",C.BLUE,86,22,0.34,0.66)
+
+    NukeBtn.MouseButton1Click:Connect(function()
+        if activeMode=="Nuke" then stopPropEngine(); NukeBtn.Text="💥 NUKE PROPS"; NukeBtn.BackgroundColor3=C.RED
+        else startPropEngine("Nuke",currentTarget,currentVis); NukeBtn.Text="⏹ STOP NUKE"; NukeBtn.BackgroundColor3=Color3.fromRGB(180,20,20)
+            VisToggle.Text="START"; VisToggle.BackgroundColor3=C.BLUE end
+    end)
+    VisToggle.MouseButton1Click:Connect(function()
+        if activeMode=="Visualizer" then stopPropEngine(); VisToggle.Text="START"; VisToggle.BackgroundColor3=C.BLUE
+        else startPropEngine("Visualizer",currentTarget,currentVis); VisToggle.Text="STOP"; VisToggle.BackgroundColor3=C.RED
+            NukeBtn.Text="💥 NUKE PROPS"; NukeBtn.BackgroundColor3=C.RED end
+    end)
+
+    VisScroll.Size=UDim2.new(0.64,0,0,60); VisScroll.Position=UDim2.new(0,0,0,112)
+    VisScroll.BackgroundColor3=C.BG; VisScroll.BorderSizePixel=0; VisScroll.ZIndex=15
+    VisScroll.Visible=false; VisScroll.ScrollBarThickness=3; VisScroll.Parent=p
+    local VL=Instance.new("UIListLayout",VisScroll); VL.SortOrder=Enum.SortOrder.LayoutOrder
+    for _,opt in ipairs({"Orbital","Swarm","Tornado","Grid"}) do
+        local ob=Instance.new("TextButton"); ob.Size=UDim2.new(1,0,0,18)
+        ob.BackgroundColor3=C.SURFACE; ob.BackgroundTransparency=0.3; ob.Text=" "..opt
+        ob.TextColor3=C.WHITE; ob.Font=Enum.Font.Gotham; ob.TextSize=10
+        ob.TextXAlignment=Enum.TextXAlignment.Left; ob.ZIndex=16; ob.Parent=VisScroll
+        ob.MouseButton1Click:Connect(function()
+            currentVis=opt; VisBtn.Text="Visualizer: "..opt.." ▼"; VisScroll.Visible=false
+            if activeMode=="Visualizer" then startPropEngine("Visualizer",currentTarget,currentVis) end
+        end)
+    end
+    VisScroll.CanvasSize=UDim2.new(0,0,0,4*18)
+    VisBtn.MouseButton1Click:Connect(function() VisScroll.Visible=not VisScroll.Visible; TargetScroll.Visible=false end)
+end
+
+-- ─── PROTECTION UI ───
+local function buildProtectionUI(p)
+    local sf,_ = mkScroll(p,4)
+    local function createToggle(name, feat)
+        local con=Instance.new("Frame"); con.Size=UDim2.new(1,-4,0,32)
+        con.BackgroundColor3=C.SURFACE; con.BackgroundTransparency=0.3; con.ZIndex=4; con.Parent=sf
+        corner(con,6); stroke(con,C.PURPLE,1)
+        local lbl=Instance.new("TextLabel"); lbl.Size=UDim2.new(0.6,0,1,0); lbl.Position=UDim2.new(0,8,0,0)
+        lbl.BackgroundTransparency=1; lbl.Text=name; lbl.TextColor3=C.WHITE; lbl.Font=Enum.Font.GothamSemibold
+        lbl.TextSize=10; lbl.TextXAlignment=Enum.TextXAlignment.Left; lbl.ZIndex=5; lbl.Parent=con
+        local tog=Instance.new("TextButton"); tog.Size=UDim2.new(0,44,0,20); tog.Position=UDim2.new(1,-52,0.5,-10)
+        tog.BackgroundColor3=C.RED; tog.BackgroundTransparency=0.15; tog.Text="OFF"
+        tog.TextColor3=C.WHITE; tog.Font=Enum.Font.GothamBold; tog.TextSize=10; tog.ZIndex=5; tog.Parent=con
+        corner(tog,5)
+        tog.MouseButton1Click:Connect(function()
+            local ns=not ProtectionStates[feat]; toggleProtection(feat,ns)
+            if ns then TweenService:Create(tog,TweenInfo.new(0.2),{BackgroundColor3=C.GREEN}):Play(); tog.Text="ON"
+            else TweenService:Create(tog,TweenInfo.new(0.2),{BackgroundColor3=C.RED}):Play(); tog.Text="OFF" end
+        end)
+    end
+    createToggle("Anti-Sit",    "AntiSit")
+    createToggle("Anti-Fling",  "AntiFling")
+    createToggle("Noclip",      "Noclip")
+    createToggle("Super Noclip","SuperNoclip")
+    createToggle("Freeze Self", "Freeze")
+    sf.CanvasSize=UDim2.new(0,0,0,5*38)
+end
+
+-- Build all tabs
+buildVehicleUI(VehiclePage)
+buildMusicTab(HitsPage,     HitsSongs)
+buildMusicTab(HindiPage,    HindiSongs)
+buildMusicTab(RapsPage,     RapsSongs)
+buildMusicTab(BhojpuriPage, BhojpuriSongs)
+buildMusicTab(PhonkPage,    PhonkSongs)
+buildMusicTab(MultiPage,    MultiSongs)
+buildMusicTab(SoundsPage,   SoundsSongs)
+buildSavedUI(SavedPage)
+buildShuffleUI(ShufflePage)
+buildPropsUI(PropsPage)
+buildProtectionUI(ProtectionPage)
+
+-- ══════════════════════════════════════════
+--  MOVABLE BUBBLE TOGGLE
+-- ══════════════════════════════════════════
+local toggleGui = Instance.new("ScreenGui")
+toggleGui.Name = "AaravMusicToggle"
+toggleGui.ResetOnSpawn = false
+toggleGui.Parent = CoreGui
+toggleGui.Enabled = true
+toggleGui.DisplayOrder = 1000
+
+local bubWrap = Instance.new("Frame")
+bubWrap.Size = UDim2.new(0,60,0,60)
+bubWrap.Position = UDim2.new(0,20,0.5,-30)
+bubWrap.AnchorPoint = Vector2.new(0,0.5)
+bubWrap.BackgroundColor3 = C.PANEL
+bubWrap.BackgroundTransparency = 0.45
+bubWrap.Active = true
+bubWrap.Parent = toggleGui
+corner(bubWrap,30)
+stroke(bubWrap, C.PURPLE, 1.5)
+
+-- Outer glow
+local bubGlow = Instance.new("Frame")
+bubGlow.Size=UDim2.new(1,14,1,14); bubGlow.Position=UDim2.new(0,-7,0,-7)
+bubGlow.BackgroundColor3=C.PURPLE; bubGlow.BackgroundTransparency=0.72; bubGlow.ZIndex=0; bubGlow.Parent=bubWrap
+corner(bubGlow,37)
+local function bubPulse()
+    if not (bubGlow and bubGlow.Parent) then return end
+    TweenService:Create(bubGlow,TweenInfo.new(1,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{BackgroundTransparency=0.88,Size=UDim2.new(1,22,1,22),Position=UDim2.new(0,-11,0,-11)}):Play()
+    task.delay(1,function()
+        if bubGlow and bubGlow.Parent then
+            TweenService:Create(bubGlow,TweenInfo.new(0.7,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{BackgroundTransparency=0.72,Size=UDim2.new(1,14,1,14),Position=UDim2.new(0,-7,0,-7)}):Play()
+            task.delay(0.7,bubPulse)
+        end
+    end)
+end
+bubPulse()
+
+-- Spinning ring
+local bubRing=Instance.new("Frame"); bubRing.Size=UDim2.new(1,6,1,6); bubRing.Position=UDim2.new(0,-3,0,-3)
+bubRing.BackgroundTransparency=1; bubRing.ZIndex=1; bubRing.Parent=bubWrap
+corner(bubRing,33)
+local brs=Instance.new("UIStroke"); brs.Thickness=1.5; brs.Color=C.GOLD; brs.Transparency=0.3; brs.Parent=bubRing
+task.spawn(function()
+    while bubRing and bubRing.Parent do
+        TweenService:Create(bubRing,TweenInfo.new(3,Enum.EasingStyle.Linear),{Rotation=bubRing.Rotation+360}):Play()
+        task.wait(3)
+    end
+end)
+
+-- Emoji label (fallback / main icon)
+local bubIcon=Instance.new("TextLabel"); bubIcon.Size=UDim2.new(1,0,1,0)
+bubIcon.BackgroundTransparency=1; bubIcon.Text="🎵"; bubIcon.Font=Enum.Font.GothamSemibold
+bubIcon.TextScaled=true; bubIcon.TextColor3=C.WHITE; bubIcon.ZIndex=2; bubIcon.Parent=bubWrap
+
+-- Device chip
+local bubTag=Instance.new("TextLabel"); bubTag.Size=UDim2.new(0,70,0,16)
+bubTag.AnchorPoint=Vector2.new(0.5,0); bubTag.Position=UDim2.new(0.5,0,1,6)
+bubTag.BackgroundColor3=C.PANEL; bubTag.BackgroundTransparency=0.3
+bubTag.Text=DeviceMode; bubTag.TextColor3=C.GOLD; bubTag.Font=Enum.Font.GothamBold
+bubTag.TextSize=10; bubTag.ZIndex=2; bubTag.Parent=bubWrap
+corner(bubTag,8); stroke(bubTag, C.PURPLE,1)
+
+-- Drag logic
+local bubDragging=false; local bubDragStart=Vector2.new(); local bubStartPos=UDim2.new(); local bubMoved=false
+bubWrap.InputBegan:Connect(function(input)
+    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+        bubDragging=true; bubMoved=false; bubDragStart=Vector2.new(input.Position.X,input.Position.Y); bubStartPos=bubWrap.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if bubDragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+        local d=Vector2.new(input.Position.X,input.Position.Y)-bubDragStart
+        if d.Magnitude>4 then bubMoved=true end
+        bubWrap.Position=UDim2.new(0,bubStartPos.X.Offset+d.X,0,bubStartPos.Y.Offset+d.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then bubDragging=false end
+end)
+
+-- Click handler (image button on top)
+local bubBtn=Instance.new("ImageButton"); bubBtn.Size=UDim2.new(1,-10,1,-10); bubBtn.Position=UDim2.new(0,5,0,5)
+bubBtn.BackgroundTransparency=1; bubBtn.Image=BUBBLE_IMAGE_ID; bubBtn.ScaleType=Enum.ScaleType.Fit
+bubBtn.Active=true; bubBtn.ZIndex=3; bubBtn.Parent=bubWrap
+corner(bubBtn,25)
+bubBtn.MouseButton1Click:Connect(function()
+    if not bubMoved then ScreenGui.Enabled=not ScreenGui.Enabled end
+end)
+
+-- Keyboard shortcut
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.UserInputType==Enum.UserInputType.Keyboard and input.KeyCode==Enum.KeyCode.X then
+        ScreenGui.Enabled=not ScreenGui.Enabled
+    end
+end)
+
+ScreenGui.Enabled = true
+bootGui:Destroy()
+
+-- Collision handling
+task.spawn(function()
+    local function setupCollision(character)
+        local hrp=character:WaitForChild("HumanoidRootPart")
+        local bodyParts={}; hrp.CanCollide=true
+        local function addPart(part)
+            if part:IsA("BasePart") and part~=hrp then table.insert(bodyParts,part) end
+        end
+        for _,part in pairs(character:GetDescendants()) do addPart(part) end
+        local dc=character.DescendantAdded:Connect(addPart)
+        local hb; hb=RunService.Heartbeat:Connect(function()
+            if not character or not character.Parent then hb:Disconnect(); dc:Disconnect(); return end
+            for _,pt in ipairs(bodyParts) do if pt and pt.Parent then pt.CanCollide=false end end
+        end)
+    end
+    if LocalPlayer.Character then setupCollision(LocalPlayer.Character) end
+    LocalPlayer.CharacterAdded:Connect(setupCollision)
+end)
+
+end -- buildMainUI
+
+print("🇻🇮 ᴀᴀʀᴀᴠ ᴍᴜꜱɪᴄ V3 LOADED — Futuristic Edition booting...")
